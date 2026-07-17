@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maaffacg"
+version = "0.1.0"
+description = "A local virtual Android device that bridges MaaFramework ADB automation to cloud-game hosts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "MaaFFACG contributors"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+netease = ["playwright>=1.45"]
+test = ["pytest>=8"]
+
+[project.scripts]
+maaffacg = "maaffacg.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

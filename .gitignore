@@ -1,0 +1,5 @@
+maaffacg.env
+.maaffacg-profile/
+logs/
+__pycache__/
+.pytest_cache/

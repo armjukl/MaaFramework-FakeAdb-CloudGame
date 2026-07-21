@@ -140,9 +140,21 @@ class NetEaseCloudGameBridge(FrameInputBridge):
         def point(x: int | None, y: int | None) -> tuple[float, float]:
             return box["x"] + (x or 0) * scale_x, box["y"] + (y or 0) * scale_y
 
+        if target is not None:
+            # 云串流页面会在画布失焦时忽略鼠标事件；焦点请求失败不应阻断 ADB 输入。
+            try:
+                target.focus(timeout=500)
+            except Exception:
+                pass
+
         if action.kind == "tap":
             x, y = point(action.start_x, action.start_y)
-            self.page.mouse.click(x, y)
+            # Playwright 的 mouse.click 会连续发送 down/up。给云串流一个短按时间，
+            # 避免其输入通道只收到一次无法识别的瞬时点击。
+            self.page.mouse.move(x, y)
+            self.page.mouse.down()
+            time.sleep(0.04)
+            self.page.mouse.up()
         elif action.kind == "swipe":
             x1, y1 = point(action.start_x, action.start_y)
             x2, y2 = point(action.end_x, action.end_y)

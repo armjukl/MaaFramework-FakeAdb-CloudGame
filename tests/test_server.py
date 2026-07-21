@@ -17,6 +17,12 @@ class ServerTests(unittest.TestCase):
         server = FakeAdbServer(CallbackBackend(lambda: PNG, actions.append), width=1280, height=720)
 
         self.assertEqual(server.execute_command("wm size"), b"Physical size: 1280x720\n")
+        self.assertEqual(server.execute_command("getprop ro.product.brand"), b"MaaFFACG\n")
+        self.assertEqual(
+            server.execute_command("getprop | grep ro.product.brand"),
+            b"[ro.product.brand]: [MaaFFACG]\n",
+        )
+        self.assertEqual(server.execute_command("getprop sys.tencent.imei"), b"")
         self.assertEqual(server.execute_command("screencap -p"), PNG)
         self.assertEqual(server.execute_command("input tap 4 5"), b"")
         server.execute_command("input swipe 1 2 3 4 500")

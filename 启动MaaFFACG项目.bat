@@ -27,18 +27,26 @@ if not exist "%TARGET_EXE%" (
     exit /b 1
 )
 
-echo [INFO] 检查 MaaFFACG 虚拟设备...
-adb.exe get-state 2>nul | find /i "device" >nul 2>nul
+echo [INFO] ADB 设备状态：
+adb.exe devices 2>&1
+echo.
+adb.exe -s 127.0.0.1:5555 get-state 2>nul | find /i "device" >nul
 if errorlevel 1 (
-    echo [WARN] MaaFFACG 虚拟设备未就绪，请确认：
-    echo   1. 已先运行 启动MaaFFACG.bat（保持窗口不关）
-    echo   2. adb.exe devices -l 应看到 127.0.0.1:5555 device
-    echo.
-    choice /C YN /M "继续启动目标程序"
+    echo [WARN] 未检测到 MaaFFACG 虚拟设备（127.0.0.1:5555）
+    echo   请确认已先运行 启动MaaFFACG.bat 且浏览器已登录
+    echo   然后运行：adb.exe devices
+    echo   应看到 127.0.0.1:5555 device
+    choice /C YN /M "继续启动"
     if errorlevel 2 exit /b 1
 )
 
-echo [INFO] 正在启动：%TARGET_EXE%
+echo [INFO] 使用 ADB：%~dp0platform-tools\adb.exe
+echo [INFO] 启动目标程序：%TARGET_EXE%
+echo.
+echo 目标程序启动后，请在连接设置中手动配置：
+echo   设备地址：127.0.0.1:5555
+echo   ADB 路径：%~dp0platform-tools\adb.exe
+echo.
 for %%I in ("%TARGET_EXE%") do set "TARGET_DIR=%%~dpI"
 start "MaaFramework Project" /D "%TARGET_DIR%" "%TARGET_EXE%"
-echo [OK] 已启动，请在目标程序中连接设备 127.0.0.1:5555
+pause

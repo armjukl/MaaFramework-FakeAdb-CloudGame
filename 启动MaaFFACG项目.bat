@@ -12,14 +12,21 @@ if not defined TARGET_EXE if exist "maaffacg.env" (
 )
 
 if not defined TARGET_EXE (
-    echo [ERROR] Drag a MaaFramework program .exe onto this script, or set MAAFFACG_TARGET_EXE in maaffacg.env.
+    echo [ERROR] 未指定目标程序。
+    echo.
+    echo 使用方法（任选其一）：
+    echo   1. 将 MaaFramework 项目的 .exe 拖到这个脚本上
+    echo   2. 在 maaffacg.env 中设置 MAAFFACG_TARGET_EXE=路径
+    pause
     exit /b 1
 )
 
 if not exist "%TARGET_EXE%" (
-    echo [ERROR] MaaFramework program was not found: %TARGET_EXE%
+    echo [ERROR] 找不到目标程序：%TARGET_EXE%
+    pause
     exit /b 1
 )
 
+echo [INFO] 正在启动：%TARGET_EXE%
 for %%I in ("%TARGET_EXE%") do set "TARGET_DIR=%%~dpI"
 start "MaaFramework Project" /D "%TARGET_DIR%" "%TARGET_EXE%"

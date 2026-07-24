@@ -22,6 +22,17 @@ A_MAXDATA: Final = 1024 * 1024
 HEADER_SIZE: Final = 24
 CHUNK_SIZE: Final = 512 * 1024
 
+_DEVICE_PROPERTIES: Final = {
+    "ro.build.version.release": "11",
+    "ro.build.version.sdk": "30",
+    "ro.product.brand": "MaaFFACG",
+    "ro.product.name": "maaffacg",
+    "ro.product.device": "maaffacg",
+    "ro.product.cpu.abi": "x86_64",
+    "ro.product.model": "MaaFFACG",
+    "ro.product.manufacturer": "MaaFFACG",
+}
+
 
 def _packet(command: int, arg0: int, arg1: int, payload: bytes = b"") -> bytes:
     return struct.pack(
@@ -117,15 +128,18 @@ class FakeAdbServer:
         if executable == "wm" and len(tokens) > 1 and tokens[1] in {"size", "density"}:
             return f"Physical size: {self.width}x{self.height}\n".encode() if tokens[1] == "size" else b"Physical density: 320\n"
         if executable == "getprop":
+            if len(tokens) >= 4 and tokens[1:3] == ["|", "grep"]:
+                pattern = " ".join(tokens[3:])
+                return "".join(
+                    f"[{key}]: [{value}]\n"
+                    for key, value in _DEVICE_PROPERTIES.items()
+                    if pattern in key or pattern in value
+                ).encode()
             key = tokens[1] if len(tokens) > 1 else ""
-            props = {
-                "ro.build.version.release": "11",
-                "ro.build.version.sdk": "30",
-                "ro.product.cpu.abi": "x86_64",
-                "ro.product.model": "MaaFFACG",
-                "ro.product.manufacturer": "MaaFFACG",
-            }
-            return (props.get(key, "") + "\n").encode()
+            value = _DEVICE_PROPERTIES.get(key)
+            # An absent Android property produces no content. Returning a
+            # newline here makes MaaFramework's emulator probes see it as set.
+            return b"" if value is None else f"{value}\n".encode()
         if executable == "settings":
             return b"0123456789abcdef\n" if "android_id" in tokens else b"\n"
         if executable == "pm" and len(tokens) > 1 and tokens[1] == "path":

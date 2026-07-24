@@ -4,12 +4,20 @@ from __future__ import annotations
 
 import logging
 import time
+from io import BytesIO
 from typing import Any
 
 from .backend import AppLaunchRequest, InputAction
 from .bridge import FrameInputBridge
 
 _LOG = logging.getLogger(__name__)
+
+try:
+    from PIL import Image, ImageEnhance
+
+    _HAS_PIL = True
+except ImportError:
+    _HAS_PIL = False
 
 
 class NetEaseCloudGameBridge(FrameInputBridge):
@@ -28,6 +36,9 @@ class NetEaseCloudGameBridge(FrameInputBridge):
         height: int = 1080,
         package_routes: dict[str, str] | None = None,
         cloud_url: str = "https://cg.163.com",
+        enhancement_saturation: float = 1.0,
+        enhancement_contrast: float = 1.0,
+        enhancement_brightness: float = 1.0,
     ) -> None:
         super().__init__()
         self.page = page
@@ -35,6 +46,9 @@ class NetEaseCloudGameBridge(FrameInputBridge):
         self.height = height
         self.package_routes = package_routes or {}
         self.cloud_url = cloud_url.rstrip("/")
+        self.enhancement_saturation = enhancement_saturation
+        self.enhancement_contrast = enhancement_contrast
+        self.enhancement_brightness = enhancement_brightness
         self.active_package: str | None = None
         self.active_game_code: str | None = None
         self._needs_recovery = False
@@ -67,6 +81,12 @@ class NetEaseCloudGameBridge(FrameInputBridge):
             # body 截图会排除滚动条，例如 1280x720 视口会变成 1264x704。
             # MaaEnd 要求 ADB 截图分辨率必须精确匹配。
             frame = target.screenshot(type="png") if target is not None else self.page.screenshot(type="png")
+            frame = self._enhance_screenshot(
+                frame,
+                self.enhancement_saturation,
+                self.enhancement_contrast,
+                self.enhancement_brightness,
+            )
             self.publish_frame(frame)
         except Exception as exc:
             # 页面跳转和云串流初始化会暂时使页面对象失效。保持 ADB 设备存活，
@@ -75,6 +95,7 @@ class NetEaseCloudGameBridge(FrameInputBridge):
             if not self._needs_recovery:
                 _LOG.warning("unable to capture a cloud-game frame; retrying: %s", exc)
             return launches
+
         try:
             return launches + self.drain_inputs(lambda action: self._apply(target, action))
         except Exception as exc:
@@ -82,6 +103,31 @@ class NetEaseCloudGameBridge(FrameInputBridge):
             if not self._needs_recovery:
                 _LOG.warning("unable to apply queued cloud-game input; retrying: %s", exc)
             return launches
+
+    @staticmethod
+    def _enhance_screenshot(
+        png: bytes,
+        saturation: float = 1.0,
+        contrast: float = 1.0,
+        brightness: float = 1.0,
+    ) -> bytes:
+        """按配置增强截图颜色；三个参数均为 1.0 时保持原始 PNG。"""
+        if not _HAS_PIL or (saturation == 1.0 and contrast == 1.0 and brightness == 1.0):
+            return png
+        try:
+            image = Image.open(BytesIO(png))
+            if saturation != 1.0:
+                image = ImageEnhance.Color(image).enhance(saturation)
+            if contrast != 1.0:
+                image = ImageEnhance.Contrast(image).enhance(contrast)
+            if brightness != 1.0:
+                image = ImageEnhance.Brightness(image).enhance(brightness)
+            output = BytesIO()
+            image.save(output, format="PNG")
+            return output.getvalue()
+        except Exception as exc:
+            _LOG.warning("screenshot color enhancement failed: %s", exc)
+            return png
 
     def _launch_game(self, request: AppLaunchRequest) -> None:
         game_code = self.package_routes.get(request.package_name)

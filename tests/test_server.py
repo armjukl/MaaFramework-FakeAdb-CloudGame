@@ -70,6 +70,61 @@ class ServerTests(unittest.TestCase):
         bridge._launch_game(AppLaunchRequest("com.example.game", "am start -n com.example.game/.Main"))
         self.assertEqual(bridge.active_game_code, "mrfz")
 
+    def test_color_enhancement_settings_are_passed_to_bridge(self) -> None:
+        bridge = NetEaseCloudGameBridge(
+            object(),
+            enhancement_saturation=1.4,
+            enhancement_contrast=1.15,
+            enhancement_brightness=1.0,
+        )
+        self.assertEqual(bridge.enhancement_saturation, 1.4)
+        self.assertEqual(bridge.enhancement_contrast, 1.15)
+        self.assertEqual(bridge.enhancement_brightness, 1.0)
+
+    def test_disabled_color_enhancement_returns_original_png(self) -> None:
+        self.assertIs(
+            NetEaseCloudGameBridge._enhance_screenshot(PNG),
+            PNG,
+        )
+
+    def test_sync_still_drains_inputs_with_color_enhancement_enabled(self) -> None:
+        class Mouse:
+            def __init__(self) -> None:
+                self.events = []
+
+            def move(self, x: float, y: float) -> None:
+                self.events.append(("move", x, y))
+
+            def down(self) -> None:
+                self.events.append(("down",))
+
+            def up(self) -> None:
+                self.events.append(("up",))
+
+        class Page:
+            def __init__(self) -> None:
+                self.mouse = Mouse()
+
+            def screenshot(self, **kwargs):
+                return PNG
+
+            def locator(self, selector: str):
+                return self
+
+            @property
+            def first(self):
+                return self
+
+            def count(self) -> int:
+                return 0
+
+        page = Page()
+        bridge = NetEaseCloudGameBridge(page, enhancement_saturation=1.0)
+        bridge.dispatch_input(InputAction("tap", 1, 2))
+
+        self.assertEqual(bridge.sync(), 1)
+        self.assertEqual([event[0] for event in page.mouse.events], ["move", "down", "up"])
+
     def test_closed_page_requests_browser_recovery(self) -> None:
         class ClosedPage:
             def is_closed(self) -> bool:

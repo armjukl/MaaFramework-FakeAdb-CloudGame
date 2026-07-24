@@ -34,6 +34,9 @@ def main() -> None:
         reconnect_interval = _number(environment, "MAAFFACG_RECONNECT_INTERVAL", 0.25)
         width = args.width if args.width is not None else _integer(environment, "MAAFFACG_WIDTH", 1920)
         height = args.height if args.height is not None else _integer(environment, "MAAFFACG_HEIGHT", 1080)
+        enhancement_saturation = _number(environment, "MAAFFACG_ENHANCE_SATURATION", 1.0)
+        enhancement_contrast = _number(environment, "MAAFFACG_ENHANCE_CONTRAST", 1.0)
+        enhancement_brightness = _number(environment, "MAAFFACG_ENHANCE_BRIGHTNESS", 1.0)
     except ValueError as exc:
         parser.error(str(exc))
     profile = args.profile or environment.get("MAAFFACG_PROFILE", ".maaffacg-profile")
@@ -51,11 +54,20 @@ def main() -> None:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as exc:
-        raise SystemExit("install the NetEase extra first: pip install -e .[netease]") from exc
+        raise SystemExit("MaaFFACG dependencies are missing — run install_dependencies.bat first") from exc
 
     with sync_playwright() as playwright:
         context, page = _open_browser(playwright, profile, width, height)
-        bridge = NetEaseCloudGameBridge(page, width, height, routes, cloud_url)
+        bridge = NetEaseCloudGameBridge(
+            page,
+            width,
+            height,
+            routes,
+            cloud_url,
+            enhancement_saturation=enhancement_saturation,
+            enhancement_contrast=enhancement_contrast,
+            enhancement_brightness=enhancement_brightness,
+        )
         bridge.sync()  # MaaFW 可能会在收到 StartApp 动作前就发起连接。
         with AdbDeviceSession(
             bridge,

@@ -16,12 +16,15 @@ MaaFW 项目 -> adb.exe -> 本地 ADB 服务 -> MaaFFACG -> 浏览器 -> 网易�
 
 ## 首次安装
 
-在 PowerShell 中执行：
+双击运行 `install_dependencies.bat`。脚本会创建项目内的 `.venv`，安装 Playwright、Pillow 和项目依赖，并下载 Chromium。
+
+需要手动安装时，在 PowerShell 中执行：
 
 ```powershell
 cd MaaFramework-FakeAdb-CloudGame
-pip install -e .[netease]
-playwright install chromium
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[netease,enhance]"
+.\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
 项目自带 `platform-tools\adb.exe` 及所需 DLL，无需另行安装 Android platform-tools。
@@ -111,6 +114,24 @@ MAAFFACG_ROUTES=com.example.game1=code1,com.example.game2=code2
 浏览器截图是网易云视频解码后的像素。若 MaaEnd 提示颜色识别失败，先检查 `MaaEnd\debug\screencap` 中同一时间生成的截图，确认实际画面、分辨率和颜色。
 
 本机 HDR、动态亮丽等桌面显示后处理不会进入浏览器截图链路。若截图画面正常但模板因极窄色值范围失败，应谨慎放宽对应资源中的 `ColorMatch` 范围，并先备份原资源。MaaEnd 的通用识别规则在 `resource\pipeline\nodes.json`，ADB 专用图片模板在 `resource_adb`。
+
+### 截图色彩增强
+
+网易云游戏的视频流可能因 4:2:0 色彩采样出现偏白或饱和度不足。需要 Pillow 才会启用截图增强：
+
+```powershell
+pip install -e ".[netease,enhance]"
+```
+
+在 `maaffacg.env` 中配置，三个参数均为 `1.0` 时不处理原始 PNG：
+
+```ini
+MAAFFACG_ENHANCE_SATURATION=1.0
+MAAFFACG_ENHANCE_CONTRAST=1.0
+MAAFFACG_ENHANCE_BRIGHTNESS=1.0
+```
+
+数值大于 `1.0` 会增强对应效果，小于 `1.0` 会减弱对应效果。建议先只调整亮度和对比度，修改后重启 MaaFFACG。
 
 ## 常见问题
 

@@ -15,9 +15,20 @@ if not exist "maaffacg.env" (
     exit /b 1
 )
 
+set "PYTHON=%~dp0.venv\Scripts\python.exe"
+if not exist "%PYTHON%" set "PYTHON=python"
+
 set "PYTHONPATH=%~dp0src;%PYTHONPATH%"
 set "PATH=%~dp0platform-tools;%PATH%"
-python -m maaffacg.cli --env "%~dp0maaffacg.env"
+"%PYTHON%" -c "import PIL, playwright" >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] MaaFFACG dependencies are missing from %PYTHON%.
+    echo Run install_dependencies.bat in this folder, then start MaaFFACG again.
+    pause
+    exit /b 1
+)
+
+"%PYTHON%" -m maaffacg.cli --env "%~dp0maaffacg.env"
 set "EXIT_CODE=%ERRORLEVEL%"
 
 if not "%EXIT_CODE%"=="0" pause

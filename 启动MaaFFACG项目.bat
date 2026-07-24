@@ -33,7 +33,7 @@ echo.
 adb.exe -s 127.0.0.1:5555 get-state 2>nul | find /i "device" >nul
 if errorlevel 1 (
     echo [WARN] MaaFFACG virtual device (127.0.0.1:5555) not detected.
-    echo   Make sure 启动MaaFFACG.bat is running and browser is logged in.
+    echo   Make sure ??MaaFFACG.bat is running and browser is logged in.
     echo   Run: adb.exe devices  (should show 127.0.0.1:5555 device)
     choice /C YN /M "Continue launching"
     if errorlevel 2 exit /b 1

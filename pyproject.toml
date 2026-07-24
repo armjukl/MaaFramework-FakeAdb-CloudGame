@@ -14,12 +14,9 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
 ]
-dependencies = [
-  "playwright>=1.45",
-  "Pillow>=10.0",
-]
 
 [project.optional-dependencies]
+netease = ["playwright>=1.45"]
 test = ["pytest>=8"]
 
 [project.scripts]

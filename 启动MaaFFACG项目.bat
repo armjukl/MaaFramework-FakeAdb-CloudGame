@@ -27,6 +27,18 @@ if not exist "%TARGET_EXE%" (
     exit /b 1
 )
 
+echo [INFO] 检查 MaaFFACG 虚拟设备...
+adb.exe get-state 2>nul | find /i "device" >nul 2>nul
+if errorlevel 1 (
+    echo [WARN] MaaFFACG 虚拟设备未就绪，请确认：
+    echo   1. 已先运行 启动MaaFFACG.bat（保持窗口不关）
+    echo   2. adb.exe devices -l 应看到 127.0.0.1:5555 device
+    echo.
+    choice /C YN /M "继续启动目标程序"
+    if errorlevel 2 exit /b 1
+)
+
 echo [INFO] 正在启动：%TARGET_EXE%
 for %%I in ("%TARGET_EXE%") do set "TARGET_DIR=%%~dpI"
 start "MaaFramework Project" /D "%TARGET_DIR%" "%TARGET_EXE%"
+echo [OK] 已启动，请在目标程序中连接设备 127.0.0.1:5555

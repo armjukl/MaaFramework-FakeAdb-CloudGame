@@ -18,34 +18,34 @@ if not exist "%MAAEND_EXE%" (
     exit /b 1
 )
 
-echo [INFO] ADB 设备状态：
+echo [INFO] ADB device status:
 adb.exe devices 2>&1
 echo.
 adb.exe -s 127.0.0.1:5555 get-state 2>nul | find /i "device" >nul
 if errorlevel 1 (
-    echo [WARN] 未检测到 MaaFFACG 虚拟设备（127.0.0.1:5555）
-    echo   请确认已先运行 启动MaaFFACG.bat 且浏览器已登录
+    echo [WARN] MaaFFACG virtual device (127.0.0.1:5555) not detected.
+    echo   Make sure 启动MaaFFACG.bat is running and browser is logged in.
     echo.
-    choice /C YN /M "继续启动 MaaEnd"
+    choice /C YN /M "Continue launching MaaEnd"
     if errorlevel 2 exit /b 1
 )
 
-REM 注入 ADB 配置到 MaaEnd
+REM Inject ADB config into MaaEnd
 for %%I in ("%MAAEND_EXE%") do set "MAAEND_DIR=%%~dpI"
 set "MAAEND_CONFIG=%MAAEND_DIR%config\mxu-MaaEnd.json"
 set "MAAFFACG_ADB_FULL=%~dp0platform-tools\adb.exe"
 
 if exist "%MAAEND_CONFIG%" (
-    echo [INFO] 注入 ADB 配置到 MaaEnd...
+    echo [INFO] Injecting ADB config into MaaEnd...
     call :inject_adb_config "%MAAEND_CONFIG%" "%MAAFFACG_ADB_FULL%"
 ) else (
-    echo [WARN] 未找到 MaaEnd 配置文件，启动后请手动配置
+    echo [WARN] MaaEnd config not found. Configure ADB manually after launch.
 )
 
-echo [INFO] 启动 MaaEnd...
+echo [INFO] Launching MaaEnd...
 echo.
-echo ADB 路径：%MAAFFACG_ADB_FULL%
-echo 设备地址：127.0.0.1:5555
+echo ADB path: %MAAFFACG_ADB_FULL%
+echo Device address: 127.0.0.1:5555
 echo.
 start "MaaEnd" "%MAAEND_EXE%"
 pause
@@ -69,8 +69,8 @@ powershell -NoProfile -Command ^
     } ^
     if ($changed) { ^
         $config | ConvertTo-Json -Depth 10 | Set-Content '%CONFIG_FILE%' -Encoding UTF8; ^
-        Write-Host '[OK] ADB 配置已注入'; ^
+        Write-Host '[OK] ADB config injected'; ^
     } else { ^
-        Write-Host '[OK] ADB 配置已存在，跳过'; ^
+        Write-Host '[OK] ADB config already exists, skipped'; ^
     }
 exit /b 0
